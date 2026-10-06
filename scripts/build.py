@@ -235,20 +235,8 @@ def build(html: str) -> str:
          "Demi-gamelle (half-bowl-chicken.webp) : « " + hero_alt["half-bowl-chicken"] + " »"],
     ))
 
-    # 5. H2 Les ingrédients
-    h_ing = find_h(soup, "h2", r"^Les ingrédients$")
-    set_text(h_ing, "Les ingrédients de notre nourriture pour chien au poulet")
-    mark_new(h_ing)
-    n += 1
-    h_ing.insert_after(reco(
-        soup, n, "H2 optimisé",
-        "« Les ingrédients » devient <strong>« Les ingrédients de notre nourriture pour chien au poulet »</strong>.",
-    ))
-
-    # 6. H2 protéine + alt en anglais de la section
+    # 5. Alt en anglais de la section protéine (H2 inchangé)
     h_prot = find_h(soup, "h2", r"^Le poulet, la protéine")
-    set_text(h_prot, "Le poulet, une protéine animale de référence pour votre chien")
-    mark_new(h_prot)
     sec_alt = {
         "Chicken dog recipe": "Blancs de poulet, courgette, carotte et quinoa, ingrédients de la recette au poulet Elmut",
         "Chicken dog recipe background": "",
@@ -259,23 +247,18 @@ def build(html: str) -> str:
             img["alt"] = sec_alt[img["alt"]]
     n += 1
     h_prot.insert_after(reco(
-        soup, n, "H2 optimisé et alt en anglais",
-        ["« Le poulet, la protéine de référence. » devient <strong>« Le poulet, une protéine animale de "
-         "référence pour votre chien »</strong>.",
-         "Les visuels de cette section ont des alt en anglais. Proposition :"],
+        soup, n, "Alt en anglais à traduire",
+        "Les visuels de cette section ont des alt en anglais. Proposition :",
         ["« Chicken dog recipe » (polaroïd « Milou et sa gamelle préf' ») → « " + sec_alt["Chicken dog recipe"] + " »",
          "« Chicken dog recipe background » (fond décoratif) → alt vide (alt=\"\")",
          "« Crown illustration » (couronne décorative) → alt vide (alt=\"\")"],
     ))
 
-    # 7. Informations nutritionnelles : H2 doublé, clone sans espace
-    new_info = "Informations nutritionnelles de la recette au poulet"
+    # 6. Informations nutritionnelles : H2 doublé, clone sans espace (texte du titre inchangé)
+    new_info = "Informations nutritionnelles"
     clone = soup.find("h2", class_="sr-only", string=re.compile("nutritionnelles"))
-    visible = soup.find("h2", attrs={"data-has-accessible-clone": "true", "aria-label": re.compile("nutritionnelles")})
     set_text(clone, new_info)
-    set_text(visible, new_info)
-    visible["aria-label"] = new_info
-    mark_new(visible)
+    visible = soup.find("h2", attrs={"data-has-accessible-clone": "true", "aria-label": re.compile("nutritionnelles")})
     n += 1
     visible.insert_after(reco(
         soup, n, "H2 doublé à corriger",
@@ -288,35 +271,18 @@ def build(html: str) -> str:
          "ne doit plus être une balise H2 (un div ou un p suffit)."],
     ))
 
-    # 8. Votre poilu est unique
+    # 7. Alt de la tranche (H2 « Votre poilu est unique » inchangé)
     h_poilu = find_h(soup, "h2", r"poilu")
-    h_poilu.clear()
-    h_poilu.append(BeautifulSoup(
-        'Votre poilu est <span class="text-pistachio-bright">unique</span>,<br/>sa gamelle au poulet aussi',
-        "html.parser"))
-    mark_new(h_poilu)
     for img in soup.find_all("img", alt="Sausage slice"):
         img["alt"] = "Tranche de nourriture fraîche pour chien au poulet, avec ses morceaux de légumes"
     n += 1
     h_poilu.insert_after(reco(
-        soup, n, "H2 optimisé et alt",
-        ["« Votre poilu est unique, sa gamelle aussi » devient <strong>« Votre poilu est unique, sa gamelle "
-         "au poulet aussi »</strong>.",
-         "Alt « Sausage slice » (tranche de boudin) → <strong>« Tranche de nourriture fraîche pour chien au "
-         "poulet, avec ses morceaux de légumes »</strong>."],
+        soup, n, "Alt en anglais à traduire",
+        "Alt « Sausage slice » (tranche de boudin) → <strong>« Tranche de nourriture fraîche pour chien au "
+        "poulet, avec ses morceaux de légumes »</strong>.",
     ))
 
-    # 9. Un petit extra
-    h_extra = find_h(soup, "h2", r"^Un petit extra")
-    set_text(h_extra, "Un petit extra ? Nos friandises pour chien")
-    mark_new(h_extra)
-    n += 1
-    h_extra.insert_after(reco(
-        soup, n, "H2 optimisé",
-        "« Un petit extra ? » devient <strong>« Un petit extra ? Nos friandises pour chien »</strong>.",
-    ))
-
-    # 10. FAQ
+    # 8. FAQ
     h_faq = find_h(soup, "h2", r"questions fraîches")
     set_text(h_faq, "Les questions fraîches sur notre recette au poulet")
     mark_new(h_faq)
@@ -327,7 +293,7 @@ def build(html: str) -> str:
         "Les questions et réponses existantes ne changent pas.",
     ))
 
-    # 11. Contenu de bas de page, après la FAQ
+    # 9. Contenu de bas de page, après la FAQ
     faq_section = h_faq.find_parent("section")
     bottom = BeautifulSoup(BOTTOM_HTML, "html.parser").section
     faq_section.insert_after(bottom)
@@ -340,7 +306,7 @@ def build(html: str) -> str:
          "Liens internes vers /produits-chien, les recettes bœuf, porc et poisson, et deux articles du blog."],
     ))
 
-    # 12. Bandeau en bas d'écran
+    # 10. Bandeau en bas d'écran
     body = soup.body
     body.insert(0, BeautifulSoup(BANNER_HTML.replace("{N}", str(n)), "html.parser"))
     body.append(BeautifulSoup(TOGGLE_JS, "html.parser"))
