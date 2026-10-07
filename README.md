@@ -2,7 +2,7 @@
 
 Maquette statique annotée de la page https://elmut.fr/produits-chien/frais/poulet, avec les recommandations SEO datashake pour la requête « nourriture chien poulet ». Démo en `noindex`, non destinée à être indexée.
 
-- Encadrés verts : recommandations (title, meta, H1, H2, alt des images, H2 doublé).
+- Encadrés verts : recommandations (title, meta, H1, alt des visuels du hero, H2 de la FAQ).
 - Contours pointillés verts : titres modifiés et contenu ajouté en bas de page.
 - Le texte existant de la page n'est pas modifié.
 - Bouton « Masquer les recommandations » : affiche la page optimisée sans les annotations.

@@ -1,7 +1,7 @@
 """Maquette SEO annotée de https://elmut.fr/produits-chien/frais/poulet.
 
 Rend la page réelle avec Playwright, retire le JavaScript et les traceurs,
-applique les recommandations (title, meta, H1, H2, alt, H2 doublé) et ajoute
+applique les recommandations (title, meta, H1, alt du hero, H2 de la FAQ) et ajoute
 le contenu de bas de page de la v2 du draft Surfer « nourriture chien poulet ».
 Le texte existant de la page n'est pas modifié.
 
@@ -235,54 +235,7 @@ def build(html: str) -> str:
          "Demi-gamelle (half-bowl-chicken.webp) : « " + hero_alt["half-bowl-chicken"] + " »"],
     ))
 
-    # 5. Alt en anglais de la section protéine (H2 inchangé)
-    h_prot = find_h(soup, "h2", r"^Le poulet, la protéine")
-    sec_alt = {
-        "Chicken dog recipe": "Blancs de poulet, courgette, carotte et quinoa, ingrédients de la recette au poulet Elmut",
-        "Chicken dog recipe background": "",
-        "Crown illustration": "",
-    }
-    for img in soup.find_all("img", alt=True):
-        if img["alt"] in sec_alt:
-            img["alt"] = sec_alt[img["alt"]]
-    n += 1
-    h_prot.insert_after(reco(
-        soup, n, "Alt en anglais à traduire",
-        "Les visuels de cette section ont des alt en anglais. Proposition :",
-        ["« Chicken dog recipe » (polaroïd « Milou et sa gamelle préf' ») → « " + sec_alt["Chicken dog recipe"] + " »",
-         "« Chicken dog recipe background » (fond décoratif) → alt vide (alt=\"\")",
-         "« Crown illustration » (couronne décorative) → alt vide (alt=\"\")"],
-    ))
-
-    # 6. Informations nutritionnelles : H2 doublé, clone sans espace (texte du titre inchangé)
-    new_info = "Informations nutritionnelles"
-    clone = soup.find("h2", class_="sr-only", string=re.compile("nutritionnelles"))
-    set_text(clone, new_info)
-    visible = soup.find("h2", attrs={"data-has-accessible-clone": "true", "aria-label": re.compile("nutritionnelles")})
-    n += 1
-    visible.insert_after(reco(
-        soup, n, "H2 doublé à corriger",
-        ["Ce titre existe deux fois dans le code. Un premier H2 masqué (classe sr-only) porte le texte "
-         "<strong>« Informationsnutritionnelles »</strong>, sans espace : c'est ce que lisent Google et les "
-         "lecteurs d'écran. Le second H2, visible, est découpé lettre par lettre en balises span pour "
-         "l'animation et marqué aria-hidden.",
-         "Recommandation : un seul H2 lisible, <strong>« " + new_info + " »</strong>, avec l'espace entre les "
-         "deux mots. Si l'animation est conservée, le H2 masqué doit porter ce texte exact et l'élément animé "
-         "ne doit plus être une balise H2 (un div ou un p suffit)."],
-    ))
-
-    # 7. Alt de la tranche (H2 « Votre poilu est unique » inchangé)
-    h_poilu = find_h(soup, "h2", r"poilu")
-    for img in soup.find_all("img", alt="Sausage slice"):
-        img["alt"] = "Tranche de nourriture fraîche pour chien au poulet, avec ses morceaux de légumes"
-    n += 1
-    h_poilu.insert_after(reco(
-        soup, n, "Alt en anglais à traduire",
-        "Alt « Sausage slice » (tranche de boudin) → <strong>« Tranche de nourriture fraîche pour chien au "
-        "poulet, avec ses morceaux de légumes »</strong>.",
-    ))
-
-    # 8. FAQ
+    # 5. FAQ
     h_faq = find_h(soup, "h2", r"questions fraîches")
     set_text(h_faq, "Les questions fraîches sur notre recette au poulet")
     mark_new(h_faq)
@@ -293,7 +246,7 @@ def build(html: str) -> str:
         "Les questions et réponses existantes ne changent pas.",
     ))
 
-    # 9. Contenu de bas de page, après la FAQ
+    # 6. Contenu de bas de page, après la FAQ
     faq_section = h_faq.find_parent("section")
     bottom = BeautifulSoup(BOTTOM_HTML, "html.parser").section
     faq_section.insert_after(bottom)
@@ -306,7 +259,7 @@ def build(html: str) -> str:
          "Liens internes vers /produits-chien, les recettes bœuf, porc et poisson, et deux articles du blog."],
     ))
 
-    # 10. Bandeau en bas d'écran
+    # 7. Bandeau en bas d'écran
     body = soup.body
     body.insert(0, BeautifulSoup(BANNER_HTML.replace("{N}", str(n)), "html.parser"))
     body.append(BeautifulSoup(TOGGLE_JS, "html.parser"))
