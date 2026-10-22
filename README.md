@@ -2,12 +2,13 @@
 
 Maquette statique annotée de la page https://elmut.fr/produits-chien/frais/poulet, avec les recommandations SEO datashake pour la requête « nourriture chien poulet ». Démo en `noindex`, non destinée à être indexée.
 
-- Encadrés verts : recommandations (title, meta, H1, alt des visuels du hero, H2 de la FAQ).
-- Contours pointillés verts : titres modifiés et contenu ajouté en bas de page.
-- Le texte existant de la page n'est pas modifié.
+- Version 2 (22/10/2026), suite au retour d'Elmut du 21/10 : aucun bloc de texte en bas de page.
+- Encadrés verts : recommandations (title, meta, petit H1 en surtitre, FAQ propre au poulet).
+- Contours pointillés verts : H1 ajouté et nouvelles questions de la FAQ, réponses dépliées pour la lecture.
+- Le texte existant de la page n'est pas modifié. Les alt et le H2 masqué relèvent d'un ticket tech à part.
 - Bouton « Masquer les recommandations » : affiche la page optimisée sans les annotations.
 
-Source du contenu de bas de page : v2 du draft Surfer « nourriture chien poulet » (octobre 2026).
+Chiffres de la FAQ relevés le 22/10/2026 sur les 5 fiches recettes chien. Brief Corpus « nourriture chien poulet » (dossier Elmut).
 
 ## Reconstruire
 
