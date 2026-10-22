@@ -1,8 +1,8 @@
 """Maquette SEO annotée de https://elmut.fr/produits-chien/frais/poulet.
 
 Rend la page réelle avec Playwright, retire le JavaScript et les traceurs,
-applique les recommandations (title, meta, H1, alt du hero, H2 de la FAQ) et ajoute
-le contenu de bas de page de la v2 du draft Surfer « nourriture chien poulet ».
+applique la v2 des recommandations (title, meta, petit H1 en surtitre, FAQ propre
+au poulet), suite au retour d'Elmut du 21/10/2026 : aucun bloc en bas de page.
 Le texte existant de la page n'est pas modifié.
 
 Usage : ~/Documents/CODE/seo-tools/.venv/bin/python -I scripts/build.py
@@ -150,8 +150,34 @@ def mark_new(tag):
 
 # ---------------------------------------------------------------- transformation
 NEW_TITLE = "Nourriture pour chien au poulet : recette fraîche | Elmut"
-NEW_META = ("Nourriture pour chien au poulet, fraîche et complète : 62 % de poulet, cuisson douce à 90 °C, "
-            "sans céréales ni conservateurs. Livrée chez vous.")
+NEW_META = ("Nourriture pour chien au poulet, fraîche et complète : 62 % de poulet, cuite à 90 °C, "
+            "sans céréales ni conservateurs. Notre recette la plus légère.")
+NEW_H1 = "Nourriture pour chien au poulet"
+
+B = "https://elmut.fr/produits-chien/frais/"
+# FAQ v2 : 1 question conservée (surpoids), 4 nouvelles. Chiffres relevés le 22/10/2026 sur les 5 fiches chien.
+FAQ = [
+    ("Qu'est-ce qui distingue la recette au poulet des autres recettes Elmut ?",
+     "C'est la plus légère de nos cinq recettes pour chien : 121,6 kcal pour 100 g et 6,4 % de matières grasses, "
+     "contre 129,1 à 144,0 kcal pour la dinde, le porc, le poisson et le bœuf. Rapportée à la matière sèche, "
+     "c'est aussi la plus riche en protéines (53,7 %). Et comme c'est un aliment complet, elle peut composer "
+     "tous ses repas, jour après jour.", True),
+    ("Mon chien est en surpoids, votre recette au poulet est-elle adaptée ?", None, False),
+    ("Le poulet cuit est-il bon pour mon chien ?",
+     "Oui, et c'est cuit que nous le servons : nos boudins cuisent sous vide à 90 °C. Cette cuisson douce préserve "
+     "le jus, le goût et les nutriments du poulet. Et pas d'os à surveiller dans la gamelle : les 62 % de poulet "
+     "de la recette sont de la viande, du foie et du cœur. De quoi régaler votre poilu, sans rien à recracher.", True),
+    ("Pourquoi du quinoa dans une recette sans céréales ?",
+     "Parce que le quinoa n'est pas une céréale : c'est la graine d'une plante cousine de l'épinard et de la "
+     "betterave, qu'on appelle souvent pseudo-céréale. Il apporte des protéines végétales que votre poilu digère "
+     f'très bien. C\'est lui qui remplace le riz des recettes au <a href="{B}boeuf">bœuf</a> et au '
+     f'<a href="{B}porc">porc</a> : poulet, dinde et poisson sont nos trois recettes sans céréales.', True),
+    ("Mon chien est allergique au poulet : quelle recette choisir ?",
+     f'Orientez-vous vers nos recettes au <a href="{B}boeuf">bœuf</a> ou au <a href="{B}porc">porc</a>, qui ne '
+     f'contiennent pas de poulet. Attention, la <a href="{B}poisson">recette au poisson</a> contient du foie de '
+     f'poulet. La <a href="{B}dinde">dinde</a> est une autre volaille : demandez l\'avis de votre vétérinaire '
+     "avant de la proposer. Et si l'allergie alimentaire n'est qu'un soupçon, lui seul pourra la confirmer.", True),
+]
 
 
 def build(html: str) -> str:
@@ -197,69 +223,55 @@ def build(html: str) -> str:
 
     n = 0
 
-    # 3. Title, meta et H1
-    h1 = soup.find("h1")
-    h1.clear()
-    h1.append(BeautifulSoup("Nourriture pour chien au poulet : notre <i>recette</i> fraîche", "html.parser"))
-    mark_new(h1)
+    # 3. Title, meta et H1 : petit H1 en surtitre, le grand titre visible reste tel quel sans balise H1
+    title = soup.find("h1")
+    title.name = "p"
+    h1 = soup.new_tag("h1", attrs={"class": "maquette-h1"})
+    h1.string = NEW_H1
+    title.insert_before(mark_new(h1))
     n += 1
-    h1.parent.append(reco(
+    title.parent.append(reco(
         soup, n, "Balise title, meta description et H1",
         ["<strong>Title</strong> : « Recette Poulet pour chien | Elmut » devient <strong>« " + NEW_TITLE
-         + " »</strong> (492 px sur 580).",
+         + " »</strong> (57 caractères).",
          "<strong>Meta description</strong> : « Aliment pour chien complet et équilibré, sans céréales, composé "
          "de délicieux poulet propre à la consommation humaine. » devient <strong>« " + NEW_META
-         + " »</strong> (910 px sur 920).",
-         "<strong>H1</strong> : « Notre recette au poulet » devient <strong>« Nourriture pour chien au poulet : "
-         "notre recette fraîche »</strong>. L'italique sur « recette » peut être conservé."],
+         + " »</strong> (147 caractères).",
+         "<strong>H1</strong> : <strong>« " + NEW_H1 + " »</strong>, en petit surtitre au-dessus du titre. Le grand "
+         "titre « Notre recette au poulet » reste affiché à l'identique, sans balise H1."],
     ))
 
-    # 4. Alt des visuels du hero : ils contiennent la balise <i> en texte brut
-    hero_alt = {
-        "elmut-sausage-chicken": "Boudin de nourriture fraîche pour chien au poulet Elmut",
-        "half-bowl-chicken": "Gamelle de repas frais pour chien au poulet Elmut",
-        "bowl-chicken": "Gamelle de nourriture pour chien au poulet Elmut",
-    }
-    for img in soup.find_all("img", alt="Notre <i>recette</i> au poulet"):
-        for key, alt in hero_alt.items():
-            if key in img["src"]:
-                img["alt"] = alt
-                break
-    n += 1
-    h1.parent.append(reco(
-        soup, n, "Corriger les alt des visuels du hero",
-        "Les trois visuels du hero ont pour alt <strong>« Notre &lt;i&gt;recette&lt;/i&gt; au poulet »</strong> : "
-        "la balise HTML du titre est recopiée telle quelle dans l'attribut. Proposition :",
-        ["Boudin (elmut-sausage-chicken.webp) : « " + hero_alt["elmut-sausage-chicken"] + " »",
-         "Gamelle (bowl-chicken.webp) : « " + hero_alt["bowl-chicken"] + " »",
-         "Demi-gamelle (half-bowl-chicken.webp) : « " + hero_alt["half-bowl-chicken"] + " »"],
-    ))
-
-    # 5. FAQ
+    # 4. FAQ : H2 inchangé, 5 questions propres au poulet (réponses dépliées dans la maquette)
     h_faq = find_h(soup, "h2", r"questions fraîches")
-    set_text(h_faq, "Les questions fraîches sur notre recette au poulet")
-    mark_new(h_faq)
+    items = h_faq.find_next_sibling("div").find_all("details", recursive=False)
+    kept = {d.summary.p.get_text(strip=True): d for d in items}
+    template = items[0]
+    for d in items:
+        d.extract()
+    container = h_faq.find_next_sibling("div")
+    for question, answer, is_new in FAQ:
+        d = next(v for k, v in kept.items() if "surpoids" in k) if not is_new else copy.deepcopy(template)
+        if is_new:
+            set_text(d.summary.p, question)
+            answer_p = d.select_one("div > div > p")
+            answer_p.clear()
+            answer_p.append(BeautifulSoup(answer, "html.parser"))
+            mark_new(d)
+        d["open"] = ""
+        d["data-open"] = "true"
+        container.append(d)
     n += 1
     h_faq.insert_after(reco(
-        soup, n, "H2 optimisé",
-        "« Les questions fraîches » devient <strong>« Les questions fraîches sur notre recette au poulet »</strong>. "
-        "Les questions et réponses existantes ne changent pas.",
+        soup, n, "FAQ propre à la recette au poulet",
+        ["Le H2 « Les questions fraîches » ne change pas. La FAQ passe à <strong>5 questions</strong> (environ "
+         "300 mots), toutes centrées sur le poulet : 4 nouvelles en pointillés, et la question sur le surpoids, "
+         "conservée telle quelle.",
+         "Les questions « aspect des rations » et « cocktail de vitamines », identiques sur toutes les recettes, "
+         "sortent de cette page. Les réponses restent dans l'accordéon actuel, qui alimente déjà le balisage "
+         "FAQPage : elles sont dépliées ici pour la lecture."],
     ))
 
-    # 6. Contenu de bas de page, après la FAQ
-    faq_section = h_faq.find_parent("section")
-    bottom = BeautifulSoup(BOTTOM_HTML, "html.parser").section
-    faq_section.insert_after(bottom)
-    words = len(bottom.get_text(" ", strip=True).split())
-    n += 1
-    bottom.find("div", class_="maquette-container").insert(0, reco(
-        soup, n, "Contenu de bas de page (à placer après la FAQ, avant le footer)",
-        [f"Environ {words} mots ajoutés, centrés sur « nourriture chien poulet » et ses variantes. C'est le seul "
-         "contenu ajouté : le texte existant de la page ne change pas.",
-         "Liens internes vers /produits-chien, les recettes bœuf, porc et poisson, et deux articles du blog."],
-    ))
-
-    # 7. Bandeau en bas d'écran
+    # 5. Bandeau en bas d'écran
     body = soup.body
     body.insert(0, BeautifulSoup(BANNER_HTML.replace("{N}", str(n)), "html.parser"))
     body.append(BeautifulSoup(TOGGLE_JS, "html.parser"))
@@ -269,7 +281,7 @@ def build(html: str) -> str:
 BANNER_HTML = """
 <div class="maquette-banner">
   <div class="maquette-banner-inner">
-    <p class="maquette-kicker">Maquette SEO · proposition datashake · octobre 2026</p>
+    <p class="maquette-kicker">Maquette SEO · proposition datashake v2 · octobre 2026</p>
     <p class="maquette-title">elmut.fr/produits-chien/frais/poulet · requête cible « nourriture chien poulet »</p>
     <p class="maquette-legend">
       <span class="legend-box"></span> {N} recommandations en encadré vert
@@ -288,91 +300,6 @@ document.querySelector('.maquette-toggle').addEventListener('click', function ()
   this.setAttribute('aria-pressed', hidden);
 });
 </script>
-"""
-
-BOTTOM_HTML = """
-<section class="maquette-bottom reco-new-section">
- <div class="maquette-container">
-  <h2>Pourquoi choisir une nourriture fraîche au poulet pour votre chien ?</h2>
-  <p>Le poulet est l'une des viandes les plus utilisées dans l'alimentation du chien, et ce n'est pas un hasard.
-  Cette volaille apporte des protéines animales de qualité, peu de matières grasses et un goût que la plupart des
-  chiens apprécient. Chez Elmut, c'est notre best-seller : la recette que nos poilus réclament le plus.</p>
-  <p>La différence se fait sur la façon de le préparer. Nos repas frais sont cuits doucement à 90 °C pour préserver
-  les nutriments, puis livrés chez vous en boudins à conserver au réfrigérateur. Pas de légumineuses, qui peuvent
-  réduire la digestibilité, pas de conservateurs ni d'additifs technologiques : uniquement des ingrédients de
-  qualité humaine, pour plus de qualité et de traçabilité.</p>
-  <p>Chaque ingrédient a un rôle précis dans la gamelle. La viande de poulet apporte l'essentiel des protéines. Le
-  foie et le cœur, deux abats riches en nutriments, complètent cet apport : le foie est une source naturelle de
-  vitamine A, le cœur de taurine. La courgette et la carotte apportent fibres et vitamines, le quinoa et la fécule
-  de pomme de terre fournissent l'énergie, l'huile de colza les acides gras oméga 3 et oméga 6 utiles à la peau et
-  au pelage, et le carbonate de calcium équilibre le rapport entre calcium et phosphore.</p>
-  <p>Le résultat : une alimentation complète qui couvre les besoins quotidiens de votre chien, adaptée aussi bien
-  aux gourmands qu'aux estomacs sensibles. Envie de varier ? Découvrez toutes nos
-  <a href="https://elmut.fr/produits-chien">recettes de repas frais pour chien</a>.</p>
-
-  <h2>Nourriture chien poulet : repas frais, croquettes ou pâtée ?</h2>
-  <p>Le poulet se retrouve dans tous les types d'aliments pour chien, des croquettes au poulet aux pâtées en boîte.
-  Mais à ingrédient égal, le mode de fabrication change tout : température de cuisson, teneur en eau, mode de
-  conservation.</p>
-  <div class="maquette-table-wrap">
-  <table>
-   <thead><tr><th>Critère</th><th>Repas frais Elmut au poulet</th><th>Croquettes pour chien</th><th>Pâtée industrielle</th></tr></thead>
-   <tbody>
-    <tr><td>Fabrication</td><td>Cuisson douce à 90 °C</td><td>Extrusion à haute température</td><td>Stérilisation en boîte ou en barquette</td></tr>
-    <tr><td>Humidité</td><td>75,6 %</td><td>Environ 8 à 12 %</td><td>Souvent 75 à 80 %</td></tr>
-    <tr><td>Texture</td><td>Viande et légumes, proche du fait maison</td><td>Granulés secs</td><td>Mousse ou bouchées en sauce</td></tr>
-    <tr><td>Conservation</td><td>Réfrigérateur, 5 jours après ouverture, congélation possible</td><td>Température ambiante, sac bien fermé</td><td>Longue durée avant ouverture, puis réfrigérateur</td></tr>
-   </tbody>
-  </table>
-  </div>
-  <p>Les croquettes restent pratiques, mais leur faible teneur en eau pousse le chien à boire davantage pour
-  compenser. Avec 75,6 % d'humidité, notre recette au poulet participe à l'hydratation de votre chien à chaque
-  repas.</p>
-  <p>Le mode de cuisson compte aussi. Les croquettes sont cuites par extrusion à haute température, un procédé qui
-  permet une longue conservation à température ambiante. Notre recette est cuite à 90 °C puis conservée au froid :
-  c'est le froid, et non des conservateurs, qui préserve sa fraîcheur. Pour aller plus loin sur la composition des
-  croquettes, lisez notre article sur les
-  <a href="https://elmut.fr/blog/articles/croquettes-avec-ou-sans-cereales">croquettes avec ou sans céréales</a>.</p>
-
-  <h2>Quelle quantité de nourriture au poulet donner à votre chien ?</h2>
-  <p>La bonne ration dépend du poids de votre chien, de son âge, de sa race, de son niveau d'activité et de sa
-  stérilisation. C'est pour cela que chaque plan Elmut est personnalisé : vos réponses au questionnaire nous
-  permettent de calculer la ration quotidienne adaptée à sa morphologie et à son mode de vie.</p>
-  <p>Pour vous donner un repère, notre recette au poulet apporte 121,6 kcal pour 100 g. Pour un chiot, les besoins
-  sont différents et évoluent vite : notre guide
-  <a href="https://elmut.fr/blog/articles/quelle-quantite-de-nourriture-pour-un-chiot-">quelle quantité de
-  nourriture pour un chiot</a> vous aide à y voir clair.</p>
-  <p>Si votre chien mange aujourd'hui des croquettes, la transition se fait sur 7 jours : 25 % de repas Elmut les
-  jours 1 et 2, 50 % les jours 3 et 4, 75 % les jours 5 et 6, puis 100 % à partir du jour 7. Son estomac s'adapte
-  ainsi en douceur à sa nouvelle alimentation.</p>
-  <p>Le prix suit la même logique : il dépend de la race de votre chien, de son âge, de son poids et de la formule
-  choisie, demi-pension ou pension complète. Le questionnaire vous donne un tarif précis, et vous pouvez commencer
-  par un essai de 2 semaines.</p>
-
-  <h2>Poulet et chien : les précautions à connaître</h2>
-  <h3>Allergies et intolérances au poulet</h3>
-  <p>Le poulet convient à la grande majorité des chiens, y compris aux estomacs sensibles. Il fait pourtant partie,
-  avec le bœuf et les produits laitiers, des sources de protéines le plus souvent impliquées dans les allergies
-  alimentaires du chien.</p>
-  <p>Démangeaisons, rougeurs de la peau, otites à répétition, pelage terne ou troubles digestifs peuvent signaler
-  une allergie ou une intolérance. Dans ce cas, parlez-en à votre vétérinaire : lui seul peut poser un diagnostic,
-  généralement grâce à un régime d'éviction. Si le poulet doit sortir de la gamelle, nos recettes au
-  <a href="https://elmut.fr/produits-chien/frais/boeuf">bœuf</a>, au
-  <a href="https://elmut.fr/produits-chien/frais/porc">porc</a> ou au
-  <a href="https://elmut.fr/produits-chien/frais/poisson">poisson</a> prennent le relais avec une autre source de
-  protéines.</p>
-  <h3>Blanc de poulet : un complément, pas un repas</h3>
-  <p>Vous pouvez donner du blanc de poulet à votre chien, à condition qu'il soit cuit, nature, sans peau, sans os et
-  sans assaisonnement (ni sel, ni ail, ni oignon). Il reste un complément : servi seul, il ne couvre pas les
-  besoins de votre chien en calcium, en vitamines et en minéraux. C'est tout l'intérêt d'une recette complète comme
-  la nôtre.</p>
-  <h3>Os de poulet cuits : un vrai danger</h3>
-  <p>Cuits, les os de poulet se brisent en éclats pointus qui peuvent blesser la bouche, l'œsophage ou l'intestin.
-  Ne laissez pas votre chien accéder aux carcasses. S'il en a avalé, surveillez-le et contactez votre vétérinaire
-  au moindre signe inhabituel (vomissements, abattement, sang dans les selles). Notre recette ne contient aucun
-  os : uniquement de la viande, du foie et du cœur de poulet.</p>
- </div>
-</section>
 """
 
 

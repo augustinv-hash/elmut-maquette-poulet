@@ -170,3 +170,6 @@ details[open] > div { grid-template-rows: 1fr !important; }
 @media (max-width: 720px) { .maquette-bottom h3 { font-size: 18px; } }
 /* Marges latérales du bloc de bas de page, écrasées par le CSS du site */
 .maquette-bottom { padding-left: 20px !important; padding-right: 20px !important; }
+
+/* FAQ v2 : liens internes visibles dans les réponses */
+details a { text-decoration: underline; text-underline-offset: 3px; }
