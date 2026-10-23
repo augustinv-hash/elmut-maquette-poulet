@@ -1,8 +1,9 @@
 """Maquette SEO annotée de https://elmut.fr/produits-chien/frais/poulet.
 
 Rend la page réelle avec Playwright, retire le JavaScript et les traceurs,
-applique la v2 des recommandations (title, meta, petit H1 en surtitre, FAQ propre
-au poulet), suite au retour d'Elmut du 21/10/2026 : aucun bloc en bas de page.
+applique la v2 des recommandations (title, meta, petit H1 en surtitre, alt, H2 doublé
+sans espace, FAQ propre au poulet), suite au retour d'Elmut du 21/10/2026 : aucun bloc
+en bas de page.
 Le texte existant de la page n'est pas modifié.
 
 Usage : ~/Documents/CODE/seo-tools/.venv/bin/python -I scripts/build.py
@@ -241,7 +242,75 @@ def build(html: str) -> str:
          "titre « Notre recette au poulet » reste affiché à l'identique, sans balise H1."],
     ))
 
-    # 4. FAQ : H2 inchangé, 5 questions propres au poulet (réponses dépliées dans la maquette)
+    # 4. Alt des visuels du hero : ils contiennent la balise <i> en texte brut
+    hero_alt = {
+        "elmut-sausage-chicken": "Boudin de nourriture fraîche pour chien au poulet Elmut",
+        "half-bowl-chicken": "Gamelle de repas frais pour chien au poulet Elmut",
+        "bowl-chicken": "Gamelle de nourriture pour chien au poulet Elmut",
+    }
+    for img in soup.find_all("img", alt="Notre <i>recette</i> au poulet"):
+        for key, alt in hero_alt.items():
+            if key in img["src"]:
+                img["alt"] = alt
+                break
+    n += 1
+    title.parent.append(reco(
+        soup, n, "Corriger les alt des visuels du hero",
+        "Les trois visuels du hero ont pour alt <strong>« Notre &lt;i&gt;recette&lt;/i&gt; au poulet »</strong> : "
+        "la balise HTML du titre est recopiée telle quelle dans l'attribut. Proposition :",
+        ["Boudin (elmut-sausage-chicken.webp) : « " + hero_alt["elmut-sausage-chicken"] + " »",
+         "Gamelle (bowl-chicken.webp) : « " + hero_alt["bowl-chicken"] + " »",
+         "Demi-gamelle (half-bowl-chicken.webp) : « " + hero_alt["half-bowl-chicken"] + " »"],
+    ))
+
+    # 5. Alt en anglais de la section protéine (H2 inchangé)
+    h_prot = find_h(soup, "h2", r"^Le poulet, la protéine")
+    sec_alt = {
+        "Chicken dog recipe": "Blancs de poulet, courgette, carotte et quinoa, ingrédients de la recette au poulet Elmut",
+        "Chicken dog recipe background": "",
+        "Crown illustration": "",
+    }
+    for img in soup.find_all("img", alt=True):
+        if img["alt"] in sec_alt:
+            img["alt"] = sec_alt[img["alt"]]
+    n += 1
+    h_prot.insert_after(reco(
+        soup, n, "Alt en anglais à traduire",
+        "Les visuels de cette section ont des alt en anglais. Proposition :",
+        ["« Chicken dog recipe » (polaroïd « Milou et sa gamelle préf' ») → « " + sec_alt["Chicken dog recipe"] + " »",
+         "« Chicken dog recipe background » (fond décoratif) → alt vide (alt=\"\")",
+         "« Crown illustration » (couronne décorative) → alt vide (alt=\"\")"],
+    ))
+
+    # 6. Informations nutritionnelles : H2 doublé, clone sans espace (texte du titre inchangé)
+    new_info = "Informations nutritionnelles"
+    clone = soup.find("h2", class_="sr-only", string=re.compile("nutritionnelles"))
+    set_text(clone, new_info)
+    visible = soup.find("h2", attrs={"data-has-accessible-clone": "true", "aria-label": re.compile("nutritionnelles")})
+    n += 1
+    visible.insert_after(reco(
+        soup, n, "H2 doublé à corriger",
+        ["Ce titre existe deux fois dans le code. Un premier H2 masqué (classe sr-only) porte le texte "
+         "<strong>« Informationsnutritionnelles »</strong>, sans espace : c'est ce que lisent Google et les "
+         "lecteurs d'écran. Le second H2, visible, est découpé lettre par lettre en balises span pour "
+         "l'animation et marqué aria-hidden.",
+         "Recommandation : un seul H2 lisible, <strong>« " + new_info + " »</strong>, avec l'espace entre les "
+         "deux mots. Si l'animation est conservée, le H2 masqué doit porter ce texte exact et l'élément animé "
+         "ne doit plus être une balise H2 (un div ou un p suffit)."],
+    ))
+
+    # 7. Alt de la tranche (H2 « Votre poilu est unique » inchangé)
+    h_poilu = find_h(soup, "h2", r"poilu")
+    for img in soup.find_all("img", alt="Sausage slice"):
+        img["alt"] = "Tranche de nourriture fraîche pour chien au poulet, avec ses morceaux de légumes"
+    n += 1
+    h_poilu.insert_after(reco(
+        soup, n, "Alt en anglais à traduire",
+        "Alt « Sausage slice » (tranche de boudin) → <strong>« Tranche de nourriture fraîche pour chien au "
+        "poulet, avec ses morceaux de légumes »</strong>.",
+    ))
+
+    # 8. FAQ : H2 inchangé, 5 questions propres au poulet (réponses dépliées dans la maquette)
     h_faq = find_h(soup, "h2", r"questions fraîches")
     items = h_faq.find_next_sibling("div").find_all("details", recursive=False)
     kept = {d.summary.p.get_text(strip=True): d for d in items}
@@ -271,7 +340,7 @@ def build(html: str) -> str:
          "FAQPage : elles sont dépliées ici pour la lecture."],
     ))
 
-    # 5. Bandeau en bas d'écran
+    # 9. Bandeau en bas d'écran
     body = soup.body
     body.insert(0, BeautifulSoup(BANNER_HTML.replace("{N}", str(n)), "html.parser"))
     body.append(BeautifulSoup(TOGGLE_JS, "html.parser"))
